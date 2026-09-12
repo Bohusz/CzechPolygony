@@ -184,6 +184,8 @@ Prefer separate files by default because the shown `.pgon` format has no obvious
 
 Generated filenames should be based on the feature name, sanitized for use as a filename.
 
+* **NAM-1 — Feature-name output filenames:** Always include the resolved feature name written to an output item in that item's filename. Treat the supplied output path as a filename template: for example, when the supplied output is `.../obec.EXT` and the resolved feature name is `NAZEV`, write the item to `.../obec-NAZEV.EXT`. Sanitize only the filename portion required by the operating system; retain the resolved name in the output content unchanged. For output formats that produce multiple items, generate a separate correctly named file for each item.
+
 ## CRS and reprojection
 
 The application must correctly handle coordinate reference systems defined in the Shapefile `.prj` file.
@@ -217,6 +219,8 @@ Output conventions:
 * GSAK PGON: latitude, longitude
 
 Do not confuse the coordinate order between these formats.
+
+* **CRS-1 — ESRI S-JTSK Krovak East North WKT:** Recognize the ESRI WKT CRS named `S-JTSK_Krovak_East_North` as S-JTSK / Krovak East North (`EPSG:5514`) before transforming its coordinates. Normalize this known source CRS through GeoTools to the EPSG definition with east/north axis order, rather than applying a generic WKT transformation that can misinterpret the WKT `X_Scale`, `Y_Scale`, and `XY_Plane_Rotation` parameters. GPX and PGON output for this CRS must fall within the expected Czech WGS 84 location and retain the required latitude/longitude output order.
 
 ## Geometry handling
 
@@ -270,6 +274,8 @@ Support at least:
 --name-field FIELD
 
 --reproject EPSG:CODE
+
+--force, -f
 ```
 
 The output format should preferably be inferred from the output file extension:
@@ -281,6 +287,16 @@ The output format should preferably be inferred from the output file extension:
 ```
 
 Provide clear usage information.
+
+### Processing progress reporting (PRG-1 to PRG-5)
+
+The application must provide the following processing-status output by default:
+
+* **PRG-1 — Paths:** Before processing begins, print the input file and output directory, each on its own line.
+* **PRG-2 — Periodic progress:** After every 250 processed input features, print the number processed and the number remaining.
+* **PRG-3 — Completion:** After successful processing, print one completion line that includes the number of input features read and processed.
+* **PRG-4 — Quiet mode:** Support `--quiet` and `-q` to suppress all output required by PRG-1, PRG-2, and PRG-3. Errors must still be reported.
+* **PRG-5 — Create output directory:** Support `--force` and `-f`. When either option is supplied and the output directory does not exist, create it before writing output and print a status message that identifies the directory created. Quiet mode must suppress this message as well.
 
 Examples:
 
@@ -315,6 +331,8 @@ Do not silently ignore features that cannot be converted. Report them clearly.
 All text output must be UTF-8.
 
 This is particularly important for Czech characters in feature names and attributes.
+
+* **ENC-1 — CPG input encoding:** When a sibling `.cpg` file is present for the input Shapefile, read its code-page declaration and configure the GeoTools Shapefile reader to use the corresponding character encoding for DBF attributes. Do not unconditionally override the declared encoding with UTF-8. If the `.cpg` declaration is invalid or unsupported, terminate with a clear error. If no `.cpg` file is present, use UTF-8 as the default input encoding.
 
 Do not unnecessarily escape Czech characters.
 
