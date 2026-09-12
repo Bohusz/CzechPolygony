@@ -28,6 +28,23 @@ java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.pgon --name-field 
 
 Use `--help` for syntax and `--version` for the version.
 
+### Metadata report
+
+Use `--metadata` instead of a conversion output path to report all DBF attributes and the north, east, south, and west vertex of every polygon component:
+
+```powershell
+java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata
+java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv
+```
+
+Without a report file, every attribute and extremum is printed on its own line. Attribute values and coordinate values are independently aligned, and reports for individual features are separated by one blank line. Coordinates use the geocaching form `N49°23.676 E016°44.608`.
+
+A supplied report must have the `.csv` extension; it creates one CSV file with one row per feature, DBF attribute columns, and separate signed decimal-degree latitude/longitude columns for each component's north, east, south, and west extrema. CSV defaults to the semicolon separator and `windows-1250` encoding. Use `--csv-separator SEPARATOR` to choose a one-character delimiter or `--csv-charset CHARSET` to choose any supported Java charset, for example:
+
+```powershell
+java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv --csv-separator , --csv-charset UTF-8
+```
+
 By default, the converter prints the input file and output directory before processing, progress after each 250 input features, and a completion line with the total processed count. Use `--quiet` or `-q` to suppress these status messages; errors remain on standard error.
 
 If the output directory does not exist, use `--force` or `-f` to create it. The converter reports the created directory by default; `--quiet` suppresses that message too.
@@ -50,6 +67,6 @@ Only `Polygon` and `MultiPolygon` input is supported. GeoJSON preserves every po
 
 ## Input encoding
 
-All generated output is UTF-8. When a sibling `.cpg` file is present, its code-page declaration controls GeoTools DBF attribute decoding (for example, `1250` selects Windows-1250). Without a `.cpg` file, DBF input defaults to UTF-8. Invalid or unsupported `.cpg` declarations cause a conversion error.
+All generated output is UTF-8 except metadata CSV, which defaults to `windows-1250` and can be changed with `--csv-charset`. When a sibling `.cpg` file is present, its code-page declaration controls GeoTools DBF attribute decoding (for example, `1250` selects Windows-1250). Without a `.cpg` file, DBF input defaults to UTF-8. Invalid or unsupported `.cpg` declarations cause a conversion error.
 
 The input `.shp`, `.shx`, and `.dbf` files must all be present and readable.

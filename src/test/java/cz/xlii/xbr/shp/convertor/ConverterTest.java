@@ -195,6 +195,94 @@ class ConverterTest {
         assertTrue(exception.getMessage().contains("Output filename collision"));
     }
 
+    @Test
+    void reportsFeatureMetadataWithGeocachingCoordinates() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try {
+            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata"}));
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String report = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(report.contains("NAZEV:      Bělá"), report);
+        assertTrue(report.contains("Polygon 1 north: N51°00.000 E015°00.000"), report);
+        assertTrue(report.contains("Polygon 1 east:  N51°00.000 E015°00.000"), report);
+        assertTrue(report.contains("Polygon 1 south: N50°00.000 E014°00.000"), report);
+        assertTrue(report.contains("Polygon 1 west:  N50°00.000 E014°00.000"), report);
+    }
+
+    @Test
+    void writesFeatureMetadataCsv() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        Path report = directory.resolve("report.csv");
+
+        Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata", report.toString(), "--quiet"}));
+
+        String csv = Files.readString(report, Charset.forName("windows-1250"));
+        assertTrue(csv.startsWith("\"NAZEV\";\"IDENTIFIER\";\"pgon1_lat_n\";\"pgon1_lon_n\";"
+                + "\"pgon1_lat_e\";\"pgon1_lon_e\";\"pgon1_lat_s\";\"pgon1_lon_s\";"
+                + "\"pgon1_lat_w\";\"pgon1_lon_w\""), csv);
+        assertTrue(csv.contains("\"Bělá\";\"1\";\"51.0\";\"15.0\";\"51.0\";\"15.0\";\"50.0\";\"14.0\";\"50.0\";\"14.0\""), csv);
+    }
+
+    @Test
+    void metadataCsvOptionsConfigureSeparatorAndCharset() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        Path report = directory.resolve("report.csv");
+
+        Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata", report.toString(),
+                "--csv-separator", ",", "--csv-charset", "UTF-8", "--quiet"}));
+
+        String csv = Files.readString(report, StandardCharsets.UTF_8);
+        assertTrue(csv.startsWith("\"NAZEV\",\"IDENTIFIER\","), csv);
+        assertTrue(csv.contains("\"Bělá\",\"1\","), csv);
+    }
+
+    @Test
+    void rejectsInvalidMetadataCsvOptions() throws Exception {
+        Path shapefile = createShapefile("Brno");
+
+        ConversionException charsetException = assertThrows(ConversionException.class,
+                () -> Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata", "report.csv", "--csv-charset", "invalid-charset"}));
+        ConversionException separatorException = assertThrows(ConversionException.class,
+                () -> Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata", "report.csv", "--csv-separator", "::"}));
+        assertTrue(charsetException.getMessage().contains("CSV charset"));
+        assertTrue(separatorException.getMessage().contains("separator"));
+    }
+
+    @Test
+    void separatesAndIndependentlyAlignsStandardOutputMetadataReports() throws Exception {
+        Path shapefile = createShapefile("Bělá", 2);
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try {
+            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata"}));
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String report = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(report.contains("NAZEV:      Bělá"), report);
+        assertTrue(report.contains("IDENTIFIER: 1"), report);
+        assertTrue(report.contains("Polygon 1 east:  N51°00.000 E015°00.000"), report);
+        assertTrue(report.matches("(?s).*\\R\\RNAZEV:.*"), report);
+    }
+
+    @Test
+    void rejectsNonCsvMetadataReport() throws Exception {
+        Path shapefile = createShapefile("Brno");
+
+        ConversionException exception = assertThrows(ConversionException.class,
+                () -> Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata", "report.txt"}));
+
+        assertTrue(exception.getMessage().contains(".csv"));
+    }
+
     private Path createShapefile(String name) throws Exception {
         return createShapefile(name, 1);
     }
@@ -218,6 +306,7 @@ class ConverterTest {
         typeBuilder.setCRS(CRS.decode("EPSG:4326", true));
         typeBuilder.add("the_geom", Polygon.class);
         typeBuilder.add("NAZEV", String.class);
+        typeBuilder.add("IDENTIFIER", Integer.class);
         SimpleFeatureType type = typeBuilder.buildFeatureType();
 
         ShapefileDataStoreFactory factory = new ShapefileDataStoreFactory();
@@ -237,6 +326,7 @@ class ConverterTest {
                     SimpleFeatureBuilder builder = new SimpleFeatureBuilder(type);
                     builder.add(polygon());
                     builder.add(distinctNames ? name + i : name);
+                    builder.add(i + 1);
                     features.add(builder.buildFeature(null));
                 }
                 store.addFeatures(features);

@@ -52,6 +52,10 @@ public final class Main {
                 String typeName = dataStore.getTypeNames()[0];
                 SimpleFeatureSource source = dataStore.getFeatureSource(typeName);
                 SimpleFeatureType schema = source.getSchema();
+                if (arguments.metadata() != null) {
+                    writeMetadata(arguments, source, schema);
+                    return;
+                }
                 NameResolver names = new NameResolver(arguments.nameField(), schema);
                 GeometryTransformer transformer = transformer(arguments, schema);
                 ProgressReporter progress = new ProgressReporter(arguments, source.getFeatures().size());
@@ -70,6 +74,22 @@ public final class Main {
     private static GeometryTransformer transformer(Arguments arguments, SimpleFeatureType schema) {
         String target = arguments.format() == OutputFormat.GEOJSON ? arguments.reproject() : "EPSG:4326";
         return target == null ? null : GeometryTransformer.between(schema.getCoordinateReferenceSystem(), target);
+    }
+
+    private static void writeMetadata(Arguments arguments, SimpleFeatureSource source, SimpleFeatureType schema)
+            throws IOException {
+        GeometryTransformer transformer = GeometryTransformer.between(schema.getCoordinateReferenceSystem(), "EPSG:4326");
+        MetadataReporter reporter = new MetadataReporter(schema, transformer, arguments.metadata().csvSeparator(),
+                arguments.metadata().csvCharset());
+        if (arguments.metadata().reportFile() == null) {
+            reporter.writeStandardOutput(source);
+            return;
+        }
+        ProgressReporter progress = new ProgressReporter(arguments, source.getFeatures().size());
+        progress.prepareOutputDirectory();
+        progress.printPaths();
+        reporter.writeCsv(source, arguments.metadata().reportFile(), progress);
+        progress.printCompletion();
     }
 
     private static void writeFeatures(Arguments arguments, SimpleFeatureSource source, NameResolver names,
@@ -136,7 +156,7 @@ public final class Main {
         }
     }
 
-    private static Geometry polygonal(SimpleFeature feature) {
+    static Geometry polygonal(SimpleFeature feature) {
         Object geometry = feature.getDefaultGeometry();
         if (!(geometry instanceof Geometry value))
             throw new ConversionException("Feature " + feature.getID() + " has no geometry.");
@@ -146,7 +166,7 @@ public final class Main {
         return value;
     }
 
-    private static List<Polygon> polygons(Geometry geometry) {
+    static List<Polygon> polygons(Geometry geometry) {
         List<Polygon> result = new ArrayList<>();
         if (geometry instanceof Polygon polygon) result.add(polygon);
         else if (geometry instanceof MultiPolygon multiPolygon) {
@@ -199,9 +219,9 @@ public final class Main {
     }
 
     record Arguments(Path input, Path output, OutputFormat format, String nameField, String reproject, boolean quiet,
-                     boolean force) {
+                     boolean force, MetadataOptions metadata) {
         Arguments(Path input, Path output, OutputFormat format, String nameField, String reproject) {
-            this(input, output, format, nameField, reproject, false, false);
+            this(input, output, format, nameField, reproject, false, false, null);
         }
 
         static Arguments parse(String[] args) {
@@ -217,12 +237,37 @@ public final class Main {
             String reproject = null;
             boolean quiet = false;
             boolean force = false;
+            Path metadataReport = null;
+            boolean metadata = false;
+            String csvSeparator = ";";
+            Charset csvCharset = Charset.forName("windows-1250");
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
                     case "--name-field" -> nameField = optionValue(args, ++i, "--name-field");
                     case "--reproject" -> reproject = optionValue(args, ++i, "--reproject");
                     case "--quiet", "-q" -> quiet = true;
                     case "--force", "-f" -> force = true;
+                    case "--csv-separator" -> {
+                        csvSeparator = optionValue(args, ++i, "--csv-separator");
+                        if (csvSeparator.length() != 1) {
+                            throw new ConversionException("CSV separator must be exactly one character.");
+                        }
+                    }
+                    case "--csv-charset" -> {
+                        String charsetName = optionValue(args, ++i, "--csv-charset");
+                        try {
+                            csvCharset = Charset.forName(charsetName);
+                        } catch (IllegalArgumentException e) {
+                            throw new ConversionException("Unsupported CSV charset: " + charsetName);
+                        }
+                    }
+                    case "--metadata" -> {
+                        if (metadata) throw new ConversionException("Option --metadata may only be specified once.");
+                        metadata = true;
+                        if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
+                            metadataReport = Path.of(args[++i]);
+                        }
+                    }
                     case "--help", "--version" -> usage(0);
                     default -> {
                         if (args[i].startsWith("--")) throw new ConversionException("Unknown option: " + args[i]);
@@ -230,12 +275,23 @@ public final class Main {
                     }
                 }
             }
+            if (metadata) {
+                if (positional.size() != 1) usage(1);
+                if (metadataReport != null && !metadataReport.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
+                    throw new ConversionException("Metadata report file must have a .csv extension: " + metadataReport);
+                }
+                return new Arguments(Path.of(positional.get(0)), metadataReport, null, nameField, reproject, quiet, force,
+                        new MetadataOptions(metadataReport, csvSeparator.charAt(0), csvCharset));
+            }
+            if (!";".equals(csvSeparator) || !Charset.forName("windows-1250").equals(csvCharset)) {
+                throw new ConversionException("CSV options may only be used with --metadata.");
+            }
             if (positional.size() != 2) usage(1);
             if (reproject != null && !reproject.matches("EPSG:[0-9]+"))
                 throw new ConversionException("Invalid CRS code: " + reproject);
             Path output = Path.of(positional.get(1));
             return new Arguments(Path.of(positional.get(0)), output, OutputFormat.fromOutput(output), nameField, reproject, quiet,
-                    force);
+                    force, null);
         }
 
         private static String optionValue(String[] args, int index, String option) {
@@ -245,12 +301,16 @@ public final class Main {
         }
 
         private static void usage(int exitCode) {
-            System.out.println("Usage: java -jar shp-converter.jar input.shp output.(geojson|gpx|pgon) [--name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]");
+            System.out.println("Usage: java -jar shp-converter.jar input.shp output.(geojson|gpx|pgon) [--name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]\n"
+                    + "   or: java -jar shp-converter.jar input.shp --metadata [report.csv] [--csv-separator SEPARATOR] [--csv-charset CHARSET] [--quiet|-q] [--force|-f]");
             System.exit(exitCode);
         }
     }
 
-    private static final class ProgressReporter {
+    record MetadataOptions(Path reportFile, char csvSeparator, Charset csvCharset) {
+    }
+
+    static final class ProgressReporter {
         private final Arguments arguments;
         private final int totalFeatures;
         private int processedFeatures;
@@ -260,7 +320,7 @@ public final class Main {
             this.totalFeatures = totalFeatures;
         }
 
-        private void prepareOutputDirectory() throws IOException {
+        void prepareOutputDirectory() throws IOException {
             Path outputDirectory = outputDirectory();
             if (Files.isDirectory(outputDirectory)) return;
             if (Files.exists(outputDirectory)) {
@@ -275,21 +335,21 @@ public final class Main {
             }
         }
 
-        private void printPaths() {
+        void printPaths() {
             if (!arguments.quiet()) {
                 System.out.println("Input file: " + arguments.input());
                 System.out.println("Output directory: " + outputDirectory());
             }
         }
 
-        private void processedFeature() {
+        void processedFeature() {
             processedFeatures++;
             if (!arguments.quiet() && processedFeatures % 250 == 0) {
                 System.out.println("Processed: " + processedFeatures + ", remaining: " + (totalFeatures - processedFeatures));
             }
         }
 
-        private void printCompletion() {
+        void printCompletion() {
             if (!arguments.quiet()) {
                 System.out.println("Completed: " + processedFeatures + " input features read and processed.");
             }

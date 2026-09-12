@@ -262,6 +262,18 @@ For example:
 
 If the specified field does not exist, terminate with a clear error.
 
+## Feature metadata report
+
+* **MET-1 — Feature metadata report:** Support a metadata-only mode activated by `--metadata [report.csv]`. Its syntax is `java -jar shp-converter.jar input.shp --metadata` for standard-output reporting, or `java -jar shp-converter.jar input.shp --metadata report.csv` for CSV reporting. This mode replaces normal format conversion and does not create GeoJSON, GPX, or PGON files.
+* For every input feature, report the names and values of all attributes, including all non-geometric DBF attributes.
+* For every Polygon component, report its northernmost, easternmost, southernmost, and westernmost coordinate after transformation to WGS 84 (`EPSG:4326`). Standard-output coordinates must use the geocaching format `N49°23.676 E016°44.608`, with exactly one space between latitude and longitude, three degree digits for longitude, two degree digits elsewhere, and three decimal places for minutes.
+* Without `report.csv`, write the metadata report to standard output, with every reported datum on its own line.
+* When `report.csv` is supplied, require the `.csv` extension. Write exactly one CSV file containing all input features, with a header row and one row per feature. Store attribute values in columns. For every Polygon component, append another four coordinate pairs to that same row in north/east/south/west order. Store each latitude and longitude in a separate column as signed decimal degrees according to its geographic hemisphere.
+* **MET-2 — CSV separator:** Use a semicolon (`;`) as the default CSV field separator. Support `--csv-separator SEPARATOR` to select a different separator for metadata CSV output.
+* **MET-3 — CSV charset:** Encode metadata CSV output as `windows-1250` by default. Support `--csv-charset CHARSET` to select another encoding by supplying a valid Java `Charset` identifier; reject an invalid or unsupported identifier with a clear error.
+* **MET-4 — Aligned standard output:** In standard-output metadata reports, align values in a value column by inserting spaces between each colon and its value. Determine one alignment width for ordinary attributes and a separate alignment width for coordinate entries.
+* **MET-5 — Feature separation:** Separate the standard-output report for each input feature with one blank line. Do not add this separator to the CSV representation.
+
 ## Command-line interface
 
 Support at least:
@@ -276,6 +288,12 @@ Support at least:
 --reproject EPSG:CODE
 
 --force, -f
+
+--metadata [report.csv]
+
+--csv-separator SEPARATOR
+
+--csv-charset CHARSET
 ```
 
 The output format should preferably be inferred from the output file extension:
@@ -306,6 +324,10 @@ java -jar shp-converter.jar obce.shp obce.geojson --reproject EPSG:4326
 java -jar shp-converter.jar obce.shp obce.gpx --name-field NAZEV
 
 java -jar shp-converter.jar obce.shp obce.pgon --name-field NAZEV
+
+java -jar shp-converter.jar obce.shp --metadata
+
+java -jar shp-converter.jar obce.shp --metadata obce.csv
 ```
 
 ## Error handling
@@ -328,7 +350,7 @@ Do not silently ignore features that cannot be converted. Report them clearly.
 
 ## Encoding
 
-All text output must be UTF-8.
+All generated text output except metadata CSV must be UTF-8. Metadata CSV uses `windows-1250` by default as specified by MET-3, unless `--csv-charset` selects another supported Java charset.
 
 This is particularly important for Czech characters in feature names and attributes.
 
