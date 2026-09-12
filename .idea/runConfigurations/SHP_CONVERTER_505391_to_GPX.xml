@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SHP CONVERTER 505391 to GPX" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="cz.xlii.xbr.shp.convertor.Main" />
+    <module name="CzechPolygony" />
+    <option name="PROGRAM_PARAMETERS" value="-f --name-field NAZEV --reproject EPSG:5514 --file-name-field LAU2_KOD C:\.work\CzechPolygony\505391\OBEC_P.shp C:\.work\CzechPolygony\obce\obec.gpx" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

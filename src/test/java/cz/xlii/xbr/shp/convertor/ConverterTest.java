@@ -166,6 +166,49 @@ class ConverterTest {
     }
 
     @Test
+    void reportsConfiguredParameters() throws Exception {
+        Path shapefile = createShapefile("Brno");
+        Path output = directory.resolve("result.geojson");
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try {
+            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--name-field", "NAZEV",
+                    "--file-name-field", "IDENTIFIER", "--reproject", "EPSG:4326", "--force"}));
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String text = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(text.contains("Input file: " + shapefile), text);
+        assertTrue(text.contains("Output file: " + output), text);
+        assertTrue(text.contains("Name field: NAZEV"), text);
+        assertTrue(text.contains("File name field: IDENTIFIER"), text);
+        assertTrue(text.contains("Reproject: EPSG:4326"), text);
+        assertTrue(text.contains("Force: enabled"), text);
+    }
+
+    @Test
+    void reportsSuppliedMetadataParameters() throws Exception {
+        Path shapefile = createShapefile("Brno");
+        Path report = directory.resolve("report.csv");
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try {
+            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), "--metadata", report.toString(),
+                    "--csv-separator", ",", "--csv-charset", "UTF-8"}));
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String text = captured.toString(StandardCharsets.UTF_8);
+        assertTrue(text.contains("Metadata: enabled"), text);
+        assertTrue(text.contains("CSV separator: ,"), text);
+        assertTrue(text.contains("CSV charset: UTF-8"), text);
+    }
+
+    @Test
     void usesCpgEncodingForDbfAttributes() throws Exception {
         Path shapefile = createShapefile("Žďár", 1, Charset.forName("windows-1250"));
         Files.writeString(shapefile.resolveSibling("input.cpg"), "1250", StandardCharsets.UTF_8);
@@ -240,6 +283,30 @@ class ConverterTest {
         String csv = Files.readString(report, StandardCharsets.UTF_8);
         assertTrue(csv.startsWith("\"NAZEV\",\"IDENTIFIER\","), csv);
         assertTrue(csv.contains("\"Bělá\",\"1\","), csv);
+    }
+
+    @Test
+    void fileNameFieldUsesItsAttributeWithoutChangingTheFeatureName() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        Path output = directory.resolve("obec.gpx");
+
+        Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--name-field", "NAZEV",
+                "--file-name-field", "IDENTIFIER", "--quiet"}));
+
+        Path namedOutput = directory.resolve("obec-1.gpx");
+        assertTrue(Files.isRegularFile(namedOutput));
+        assertTrue(Files.readString(namedOutput).contains("<name>Bělá</name>"));
+    }
+
+    @Test
+    void rejectsMissingFileNameField() throws Exception {
+        Path shapefile = createShapefile("Brno");
+
+        ConversionException exception = assertThrows(ConversionException.class,
+                () -> Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), directory.resolve("obec.gpx").toString(),
+                        "--file-name-field", "MISSING", "--quiet"})));
+
+        assertTrue(exception.getMessage().contains("file name field"));
     }
 
     @Test

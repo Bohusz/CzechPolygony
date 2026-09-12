@@ -15,7 +15,7 @@ The self-contained executable is `target/shp-converter-1.0-SNAPSHOT.jar`.
 ## Usage
 
 ```text
-java -jar target/shp-converter-1.0-SNAPSHOT.jar input.shp output.geojson [--name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]
+java -jar target/shp-converter-1.0-SNAPSHOT.jar input.shp output.geojson [--name-field FIELD] [--file-name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]
 ```
 
 Supported output extensions are `.geojson`, `.gpx`, and `.pgon`.
@@ -45,7 +45,7 @@ A supplied report must have the `.csv` extension; it creates one CSV file with o
 java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv --csv-separator , --csv-charset UTF-8
 ```
 
-By default, the converter prints the input file and output directory before processing, progress after each 250 input features, and a completion line with the total processed count. Use `--quiet` or `-q` to suppress these status messages; errors remain on standard error.
+By default, the converter prints the input file, output file, output directory, and values of supplied options before processing, progress after each 250 input features, and a completion line with the total processed count. Use `--quiet` or `-q` to suppress these status messages; errors remain on standard error.
 
 If the output directory does not exist, use `--force` or `-f` to create it. The converter reports the created directory by default; `--quiet` suppresses that message too.
 
@@ -63,7 +63,7 @@ Coordinate order differs by format:
 
 Only `Polygon` and `MultiPolygon` input is supported. GeoJSON preserves every polygon component and interior ring. GPX writes one exterior-boundary track per polygon component. PGON writes a separate UTF-8 file per component.
 
-`--name-field NAZEV` selects the name attribute. Without it, the first non-empty string attribute is used; otherwise names such as `polygon-1` are generated. Every output item receives a separate name-based file: `obec.geojson` and the name `Bělá pod Bezdězem` produce `obec-Bělá pod Bezdězem.geojson`. The filename component is sanitized only as required by the operating system; the original name remains unchanged in output content. Duplicate generated filenames are rejected rather than overwritten.
+`--name-field NAZEV` selects the name attribute. Without it, the first non-empty string attribute is used; otherwise names such as `polygon-1` are generated. Every output item receives a separate name-based file: `obec.geojson` and the name `Bělá pod Bezdězem` produce `obec-Bělá pod Bezdězem.geojson`. Use `--file-name-field FIELD` to select a different attribute exclusively for filenames; without it, the feature name is used as before. The filename component is sanitized only as required by the operating system; the original name remains unchanged in output content. Duplicate generated filenames are rejected rather than overwritten.
 
 ## Input encoding
 

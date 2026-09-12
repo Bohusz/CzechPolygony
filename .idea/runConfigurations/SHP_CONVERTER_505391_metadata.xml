@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SHP CONVERTER 505391 metadata" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="cz.xlii.xbr.shp.convertor.Main" />
+    <module name="CzechPolygony" />
+    <option name="PROGRAM_PARAMETERS" value="C:\.work\CzechPolygony\505391\OBEC_P.shp --metadata" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

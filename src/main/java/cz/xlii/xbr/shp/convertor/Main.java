@@ -56,11 +56,12 @@ public final class Main {
                     writeMetadata(arguments, source, schema);
                     return;
                 }
-                NameResolver names = new NameResolver(arguments.nameField(), schema);
+                NameResolver names = new NameResolver(arguments.nameField(), arguments.fileNameField(), schema);
                 GeometryTransformer transformer = transformer(arguments, schema);
                 ProgressReporter progress = new ProgressReporter(arguments, source.getFeatures().size());
                 progress.prepareOutputDirectory();
                 progress.printPaths();
+                progress.printParameters();
                 writeFeatures(arguments, source, names, transformer, progress);
                 progress.printCompletion();
             } finally {
@@ -88,6 +89,7 @@ public final class Main {
         ProgressReporter progress = new ProgressReporter(arguments, source.getFeatures().size());
         progress.prepareOutputDirectory();
         progress.printPaths();
+        progress.printParameters();
         reporter.writeCsv(source, arguments.metadata().reportFile(), progress);
         progress.printCompletion();
     }
@@ -110,7 +112,7 @@ public final class Main {
                 SimpleFeature feature = features.next();
                 featureNumber++;
                 Geometry geometry = polygonal(feature);
-                try (GeoJsonWriter writer = new GeoJsonWriter(outputNames.resolve(names.resolve(feature, featureNumber)))) {
+                try (GeoJsonWriter writer = new GeoJsonWriter(outputNames.resolve(names.resolveFileName(feature, featureNumber)))) {
                     writer.write(feature, transformer == null ? geometry : transformer.transform(geometry));
                 }
                 progress.processedFeature();
@@ -127,9 +129,11 @@ public final class Main {
                 featureNumber++;
                 List<Polygon> polygons = polygons(transformer.transform(polygonal(feature)));
                 String name = names.resolve(feature, featureNumber);
+                String fileName = names.resolveFileName(feature, featureNumber);
                 for (int i = 0; i < polygons.size(); i++) {
                     String componentName = polygons.size() == 1 ? name : name + " - " + (i + 1);
-                    try (GpxWriter writer = new GpxWriter(outputNames.resolve(componentName))) {
+                    String fileComponentName = polygons.size() == 1 ? fileName : fileName + " - " + (i + 1);
+                    try (GpxWriter writer = new GpxWriter(outputNames.resolve(fileComponentName))) {
                         writer.write(componentName, polygons.get(i));
                     }
                 }
@@ -146,10 +150,12 @@ public final class Main {
                 SimpleFeature feature = features.next();
                 featureNumber++;
                 String name = names.resolve(feature, featureNumber);
+                String fileName = names.resolveFileName(feature, featureNumber);
                 List<Polygon> polygons = polygons(transformer.transform(polygonal(feature)));
                 for (int i = 0; i < polygons.size(); i++) {
                     String componentName = polygons.size() == 1 ? name : name + " - " + (i + 1);
-                    new PgonWriter(outputNames.resolve(componentName)).write(componentName, polygons.get(i));
+                    String fileComponentName = polygons.size() == 1 ? fileName : fileName + " - " + (i + 1);
+                    new PgonWriter(outputNames.resolve(fileComponentName)).write(componentName, polygons.get(i));
                 }
                 progress.processedFeature();
             }
@@ -218,10 +224,10 @@ public final class Main {
         }
     }
 
-    record Arguments(Path input, Path output, OutputFormat format, String nameField, String reproject, boolean quiet,
+    record Arguments(Path input, Path output, OutputFormat format, String nameField, String fileNameField, String reproject, boolean quiet,
                      boolean force, MetadataOptions metadata) {
         Arguments(Path input, Path output, OutputFormat format, String nameField, String reproject) {
-            this(input, output, format, nameField, reproject, false, false, null);
+            this(input, output, format, nameField, null, reproject, false, false, null);
         }
 
         static Arguments parse(String[] args) {
@@ -234,6 +240,7 @@ public final class Main {
             }
             List<String> positional = new ArrayList<>();
             String nameField = null;
+            String fileNameField = null;
             String reproject = null;
             boolean quiet = false;
             boolean force = false;
@@ -241,20 +248,25 @@ public final class Main {
             boolean metadata = false;
             String csvSeparator = ";";
             Charset csvCharset = Charset.forName("windows-1250");
+            boolean csvSeparatorSupplied = false;
+            boolean csvCharsetSupplied = false;
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
                     case "--name-field" -> nameField = optionValue(args, ++i, "--name-field");
+                    case "--file-name-field" -> fileNameField = optionValue(args, ++i, "--file-name-field");
                     case "--reproject" -> reproject = optionValue(args, ++i, "--reproject");
                     case "--quiet", "-q" -> quiet = true;
                     case "--force", "-f" -> force = true;
                     case "--csv-separator" -> {
                         csvSeparator = optionValue(args, ++i, "--csv-separator");
+                        csvSeparatorSupplied = true;
                         if (csvSeparator.length() != 1) {
                             throw new ConversionException("CSV separator must be exactly one character.");
                         }
                     }
                     case "--csv-charset" -> {
                         String charsetName = optionValue(args, ++i, "--csv-charset");
+                        csvCharsetSupplied = true;
                         try {
                             csvCharset = Charset.forName(charsetName);
                         } catch (IllegalArgumentException e) {
@@ -280,8 +292,8 @@ public final class Main {
                 if (metadataReport != null && !metadataReport.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
                     throw new ConversionException("Metadata report file must have a .csv extension: " + metadataReport);
                 }
-                return new Arguments(Path.of(positional.get(0)), metadataReport, null, nameField, reproject, quiet, force,
-                        new MetadataOptions(metadataReport, csvSeparator.charAt(0), csvCharset));
+                return new Arguments(Path.of(positional.get(0)), metadataReport, null, nameField, fileNameField, reproject, quiet, force,
+                        new MetadataOptions(metadataReport, csvSeparator.charAt(0), csvCharset, csvSeparatorSupplied, csvCharsetSupplied));
             }
             if (!";".equals(csvSeparator) || !Charset.forName("windows-1250").equals(csvCharset)) {
                 throw new ConversionException("CSV options may only be used with --metadata.");
@@ -290,7 +302,7 @@ public final class Main {
             if (reproject != null && !reproject.matches("EPSG:[0-9]+"))
                 throw new ConversionException("Invalid CRS code: " + reproject);
             Path output = Path.of(positional.get(1));
-            return new Arguments(Path.of(positional.get(0)), output, OutputFormat.fromOutput(output), nameField, reproject, quiet,
+            return new Arguments(Path.of(positional.get(0)), output, OutputFormat.fromOutput(output), nameField, fileNameField, reproject, quiet,
                     force, null);
         }
 
@@ -301,13 +313,14 @@ public final class Main {
         }
 
         private static void usage(int exitCode) {
-            System.out.println("Usage: java -jar shp-converter.jar input.shp output.(geojson|gpx|pgon) [--name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]\n"
+            System.out.println("Usage: java -jar shp-converter.jar input.shp output.(geojson|gpx|pgon) [--name-field FIELD] [--file-name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]\n"
                     + "   or: java -jar shp-converter.jar input.shp --metadata [report.csv] [--csv-separator SEPARATOR] [--csv-charset CHARSET] [--quiet|-q] [--force|-f]");
             System.exit(exitCode);
         }
     }
 
-    record MetadataOptions(Path reportFile, char csvSeparator, Charset csvCharset) {
+    record MetadataOptions(Path reportFile, char csvSeparator, Charset csvCharset, boolean csvSeparatorSupplied,
+                           boolean csvCharsetSupplied) {
     }
 
     static final class ProgressReporter {
@@ -338,7 +351,33 @@ public final class Main {
         void printPaths() {
             if (!arguments.quiet()) {
                 System.out.println("Input file: " + arguments.input());
+                System.out.println("Output file: " + arguments.output());
                 System.out.println("Output directory: " + outputDirectory());
+            }
+        }
+
+        void printParameters() {
+            if (arguments.quiet()) return;
+            if (arguments.nameField() != null) {
+                System.out.println("Name field: " + arguments.nameField());
+            }
+            if (arguments.fileNameField() != null) {
+                System.out.println("File name field: " + arguments.fileNameField());
+            }
+            if (arguments.reproject() != null) {
+                System.out.println("Reproject: " + arguments.reproject());
+            }
+            if (arguments.force()) {
+                System.out.println("Force: enabled");
+            }
+            if (arguments.metadata() != null) {
+                System.out.println("Metadata: enabled");
+                if (arguments.metadata().csvSeparatorSupplied()) {
+                    System.out.println("CSV separator: " + arguments.metadata().csvSeparator());
+                }
+                if (arguments.metadata().csvCharsetSupplied()) {
+                    System.out.println("CSV charset: " + arguments.metadata().csvCharset().name());
+                }
             }
         }
 

@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SHP CONVERTER OBCE metadata" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="cz.xlii.xbr.shp.convertor.Main" />
+    <module name="CzechPolygony" />
+    <option name="PROGRAM_PARAMETERS" value="&quot;g:\Můj disk\GeoCaching\Polygony\ČUZK\shp-stat-epsg-5514\1\OBCE_P.shp&quot; --metadata" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

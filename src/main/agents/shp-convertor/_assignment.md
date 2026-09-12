@@ -165,6 +165,10 @@ For MultiPolygon geometries, write each polygon component as a separate `.pgon` 
 
 Generated filenames should be based on the feature name and/or feature identifier, sanitized for use as a filename.
 
+### Separate output filename field (NAM-2)
+
+Support `--file-name-field FIELD` to select an input attribute whose value is used exclusively to build generated output filenames. When the option is omitted, use the resolved feature name as before. The `--name-field` option must continue to control the name written in output content, including GPX track names and PGON `GsakName` values. Fail clearly when the configured filename field does not exist.
+
 The output file must use UTF-8 encoding.
 
 Do not add any additional text, metadata or delimiters to the PGON file beyond the format described above.
@@ -306,7 +310,7 @@ The output format should preferably be inferred from the output file extension:
 
 Provide clear usage information.
 
-### Processing progress reporting (PRG-1 to PRG-5)
+### Processing progress reporting (PRG-1 to PRG-6)
 
 The application must provide the following processing-status output by default:
 
@@ -315,6 +319,7 @@ The application must provide the following processing-status output by default:
 * **PRG-3 — Completion:** After successful processing, print one completion line that includes the number of input features read and processed.
 * **PRG-4 — Quiet mode:** Support `--quiet` and `-q` to suppress all output required by PRG-1, PRG-2, and PRG-3. Errors must still be reported.
 * **PRG-5 — Create output directory:** Support `--force` and `-f`. When either option is supplied and the output directory does not exist, create it before writing output and print a status message that identifies the directory created. Quiet mode must suppress this message as well.
+* **PRG-6 — Supplied parameters:** Before processing begins, print the supplied output file and the effective values of all additional supplied parameters, each on its own line. Quiet mode must suppress these messages as well.
 
 Examples:
 
