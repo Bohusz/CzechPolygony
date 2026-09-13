@@ -12,6 +12,7 @@ import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -21,11 +22,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public final class Main {
-    private static final String VERSION = "shp-converter 1.0.0";
+    private static final String VERSION = "shp-converter " + projectVersion();
 
     private Main() {
+    }
+
+    private static String projectVersion() {
+        Properties properties = new Properties();
+        try (InputStream stream = Main.class.getResourceAsStream("/version.properties")) {
+            if (stream == null) return "unknown";
+            properties.load(stream);
+            return properties.getProperty("version", "unknown");
+        } catch (IOException e) {
+            return "unknown";
+        }
     }
 
     public static void main(String[] args) {
