@@ -13,6 +13,23 @@ Use this procedure to create and publish a new release of the Shapefile converte
 
 Choose a version without the `-SNAPSHOT` suffix, for example `1.0.0`.
 
+### Patch release procedure
+
+Add this procedure to this document rather than creating a separate file: a patch release uses the same build, tag, and GitHub publishing workflow as every other release.
+
+1. Identify the latest released version in the maintenance line. For example, the patch following `1.0.0` is `1.0.1`.
+2. Base the patch on the released maintenance line. If development has moved to a later minor version, create a branch from the previous release tag, for example:
+
+```powershell
+git switch -c release/1.0 v1.0.0
+```
+
+3. Apply only the intended backward-compatible fixes, review them, and run the full verification from step 2 with the patch version.
+4. Update `pom.xml` to the final patch version, for example `1.0.1`, then follow steps 2 through 4 below using `1.0.1` and tag `v1.0.1`.
+5. After publishing, merge or otherwise apply the patch fix to the active development branch as appropriate. Do not replace the active development version with the patch version when it is already targeting a later minor release.
+
+For a patch while the active branch is still on the same development line, for example `1.0-SNAPSHOT`, use that branch directly and continue with the normal steps below after changing it to `1.0.1`.
+
 Update the project version in `pom.xml`:
 
 ```xml
