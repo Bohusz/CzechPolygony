@@ -6,7 +6,7 @@
 
     <groupId>cz.xlii.xbr.shp.convertor</groupId>
     <artifactId>shp-converter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -54,6 +54,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
