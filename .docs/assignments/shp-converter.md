@@ -100,56 +100,8 @@ Use latitude/longitude in the GPX `lat` and `lon` attributes.
 
 ### 3. GSAK `.pgon`
 
-Support the simple polygon format used by GSAK.
-
-A `.pgon` file has the following structure:
-
-```
-# GsakName=Bělá pod Bezdězem
-50.53834948224382 14.82675439480499
-50.5384396501585 14.826903467105987
-50.539172432112814 14.825492195096162
-...
-50.53834948224382 14.82675439480499
-#
-```
-
-The first line contains:
-
-```
-# GsakName=<name>
-```
-
-This is followed by polygon vertices, one vertex per line.
-
-Coordinates are written as:
-
-```
-latitude longitude
-```
-
-This is important: `.pgon` uses latitude first and longitude second, unlike GeoJSON.
-
-The polygon MUST be explicitly closed by repeating the first coordinate as the final coordinate.
-
-After the repeated first coordinate, write a final line containing exactly:
-
-```
-#
-```
-
-The `#` line terminates the polygon.
-
-For example:
-
-```
-# GsakName=Brno
-49.20 16.60
-49.21 16.61
-49.21 16.62
-49.20 16.60
-#
-```
+Support the simple polygon format used by GSAK,
+as described in the [GSAK polygon file format](../references/GSAK-polygon-file-format.md).
 
 Use the feature's name attribute for `GsakName`.
 
