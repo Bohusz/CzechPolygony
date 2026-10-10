@@ -10,20 +10,20 @@ Install JDK 21, then run:
 mvn package
 ```
 
-The self-contained executable is `target/shp-converter-1.0-SNAPSHOT.jar`.
+The self-contained executable is `shp-converter/target/shp-converter-1.0-SNAPSHOT.jar`.
 
 ## Usage
 
 ```text
-java -jar target/shp-converter-1.0-SNAPSHOT.jar input.shp output.geojson [--name-field FIELD] [--file-name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar input.shp output.geojson [--name-field FIELD] [--file-name-field FIELD] [--reproject EPSG:CODE] [--quiet|-q] [--force|-f]
 ```
 
 Supported output extensions are `.geojson`, `.gpx`, and `.pgon`.
 
 ```powershell
-java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.geojson --reproject EPSG:4326
-java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.gpx --name-field NAZEV
-java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.pgon --name-field NAZEV
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.geojson --reproject EPSG:4326
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.gpx --name-field NAZEV
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar obce.shp obce.pgon --name-field NAZEV
 ```
 
 Use `--help` for syntax and `--version` for the version.
@@ -33,8 +33,8 @@ Use `--help` for syntax and `--version` for the version.
 Use `--metadata` instead of a conversion output path to report all DBF attributes and the north, east, south, and west vertex of every polygon component:
 
 ```powershell
-java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata
-java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv
 ```
 
 Without a report file, every attribute and extremum is printed on its own line. Attribute values and coordinate values are independently aligned, and reports for individual features are separated by one blank line. Coordinates use the geocaching form `N49°23.676 E016°44.608`.
@@ -42,7 +42,7 @@ Without a report file, every attribute and extremum is printed on its own line. 
 A supplied report must have the `.csv` extension; it creates one CSV file with one row per feature, DBF attribute columns, and separate signed decimal-degree latitude/longitude columns for each component's north, east, south, and west extrema. CSV defaults to the semicolon separator and `windows-1250` encoding. Use `--csv-separator SEPARATOR` to choose a one-character delimiter or `--csv-charset CHARSET` to choose any supported Java charset, for example:
 
 ```powershell
-java -jar target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv --csv-separator , --csv-charset UTF-8
+java -jar shp-converter/target/shp-converter-1.0-SNAPSHOT.jar obce.shp --metadata obce.csv --csv-separator , --csv-charset UTF-8
 ```
 
 By default, the converter prints the input file, output file, output directory, and values of supplied options before processing, progress after each 250 input features, and a completion line with the total processed count. Use `--quiet` or `-q` to suppress these status messages; errors remain on standard error.

@@ -25,12 +25,12 @@ git switch -c release/1.0 v1.0.0
 ```
 
 3. Apply only the intended backward-compatible fixes, review them, and run the full verification from step 2 with the patch version.
-4. Update `pom.xml` to the final patch version, for example `1.0.1`, then follow steps 2 through 4 below using `1.0.1` and tag `v1.0.1`.
+4. Update `shp-converter/pom.xml` to the final patch version, for example `1.0.1`, then follow steps 2 through 4 below using `1.0.1` and tag `v1.0.1`.
 5. After publishing, merge or otherwise apply the patch fix to the active development branch as appropriate. Do not replace the active development version with the patch version when it is already targeting a later minor release.
 
 For a patch while the active branch is still on the same development line, for example `1.0-SNAPSHOT`, use that branch directly and continue with the normal steps below after changing it to `1.0.1`.
 
-Update the project version in `pom.xml`:
+Update the project version in `shp-converter/pom.xml`:
 
 ```xml
 <version>1.0.0</version>
@@ -46,14 +46,14 @@ From the project root in PowerShell, run:
 $env:JAVA_HOME = 'C:\Users\Bohusz\.jdks\corretto-21.0.9'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 mvn clean package
-java -jar target\shp-converter-1.0.0.jar --version
-java -jar target\shp-converter-1.0.0.jar --help
+java -jar shp-converter\target\shp-converter-1.0.0.jar --version
+java -jar shp-converter\target\shp-converter-1.0.0.jar --help
 ```
 
 `mvn clean package` runs the test suite and creates the self-contained executable JAR:
 
 ```
-target\shp-converter-1.0.0.jar
+shp-converter\target\shp-converter-1.0.0.jar
 ```
 
 The Maven Shade plugin replaces the normal JAR with the dependency-inclusive executable JAR. Do not publish `*-shaded.jar`; it is not the final artifact in this project.
@@ -66,7 +66,7 @@ Review the pending changes, commit the version change and any release notes, the
 
 ```powershell
 git status
-git add pom.xml RELEASE.md README.md
+git add pom.xml shp-converter/pom.xml RELEASE.md README.md
 git commit -m "Release 1.0.0"
 git tag -a v1.0.0 -m "Release 1.0.0"
 git push origin main
@@ -80,10 +80,10 @@ Replace `main` with the actual release branch if it differs. Only tag the commit
 Create a GitHub release from the tag and attach the JAR:
 
 ```powershell
-gh release create v1.0.0 target\shp-converter-1.0.0.jar --repo bohusz/CzechPolygony --title "Shapefile converter 1.0.0" --generate-notes
+gh release create v1.0.0 shp-converter\target\shp-converter-1.0.0.jar --repo bohusz/CzechPolygony --title "Shapefile converter 1.0.0" --generate-notes
 ```
 
-Alternatively, open [the repository releases page](https://github.com/bohusz/CzechPolygony/releases), select **Draft a new release**, choose tag `v1.0.0`, enter the title and release notes, upload `target\shp-converter-1.0.0.jar`, and publish it.
+Alternatively, open [the repository releases page](https://github.com/bohusz/CzechPolygony/releases), select **Draft a new release**, choose tag `v1.0.0`, enter the title and release notes, upload `shp-converter\target\shp-converter-1.0.0.jar`, and publish it.
 
 After publishing, download the attached JAR from the GitHub release page and run:
 
@@ -95,10 +95,10 @@ This verifies the exact published artifact rather than only the local build.
 
 ## 5. Start the next development version
 
-After the release is published, update `pom.xml` to the next development version, for example `1.1-SNAPSHOT`, commit it, and push it:
+After the release is published, update `shp-converter/pom.xml` to the next development version, for example `1.1-SNAPSHOT`, commit it, and push it:
 
 ```powershell
-git add pom.xml
+git add pom.xml shp-converter/pom.xml
 git commit -m "Start 1.1-SNAPSHOT development"
 git push origin main
 ```
