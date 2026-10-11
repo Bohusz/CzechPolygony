@@ -299,6 +299,37 @@ class ConverterTest {
     }
 
     @Test
+    void pgonOutputFilenameExpandsSeveralMetadataPlaceholders() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        Path output = directory.resolve("obec-{{NAZEV}}-{{IDENTIFIER}}.pgon");
+
+        Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--quiet"}));
+
+        assertTrue(Files.isRegularFile(directory.resolve("obec-Bělá-1.pgon")));
+    }
+
+    @Test
+    void pgonOutputWithoutPlaceholderKeepsExistingFilenameConstruction() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        Path output = directory.resolve("obec.pgon");
+
+        Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--quiet"}));
+
+        assertTrue(Files.isRegularFile(directory.resolve("obec-Bělá.pgon")));
+    }
+
+    @Test
+    void rejectsMissingPgonOutputFilenamePlaceholderField() throws Exception {
+        Path shapefile = createShapefile("Brno");
+        Path output = directory.resolve("obec-{{MISSING}}.pgon");
+
+        ConversionException exception = assertThrows(ConversionException.class,
+                () -> Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--quiet"})));
+
+        assertTrue(exception.getMessage().contains("Output filename field"));
+    }
+
+    @Test
     void rejectsMissingFileNameField() throws Exception {
         Path shapefile = createShapefile("Brno");
 

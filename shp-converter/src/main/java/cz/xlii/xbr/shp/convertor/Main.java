@@ -168,7 +168,9 @@ public final class Main {
                 for (int i = 0; i < polygons.size(); i++) {
                     String componentName = polygons.size() == 1 ? name : name + " - " + (i + 1);
                     String fileComponentName = polygons.size() == 1 ? fileName : fileName + " - " + (i + 1);
-                    new PgonWriter(outputNames.resolve(fileComponentName)).write(componentName, polygons.get(i));
+                    Integer componentNumber = polygons.size() == 1 ? null : i + 1;
+                    new PgonWriter(outputNames.resolvePgon(fileComponentName, feature, componentNumber))
+                            .write(componentName, polygons.get(i));
                 }
                 progress.processedFeature();
             }
