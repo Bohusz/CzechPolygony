@@ -1,7 +1,8 @@
 # GSAK Polygon File Format
 
 - The file name extension is `.pgon`.
-- The file is a simple text based format.
+- The file is a simple text-based format.
+- The file is encoded in Windows-1250 character encoding.
 
 ```
 # GsakName=Bělá pod Bezdězem

@@ -5,11 +5,12 @@ import org.locationtech.jts.geom.Polygon;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 final class PgonWriter {
+    private static final Charset WINDOWS_1250 = Charset.forName("windows-1250");
     private final Path output;
 
     PgonWriter(Path output) {
@@ -17,7 +18,7 @@ final class PgonWriter {
     }
 
     void write(String name, Polygon polygon) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(output, WINDOWS_1250)) {
             writer.write("# GsakName=" + name + "\n");
             Coordinate[] coordinates = polygon.getExteriorRing().getCoordinates();
             for (Coordinate coordinate : coordinates) writer.write(coordinate.y + " " + coordinate.x + "\n");

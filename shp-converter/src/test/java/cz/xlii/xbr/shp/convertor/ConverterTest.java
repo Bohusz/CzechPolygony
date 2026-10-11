@@ -56,7 +56,7 @@ class ConverterTest {
 
         Path pgon = directory.resolve("result.pgon");
         Main.convert(new Main.Arguments(shapefile, pgon, OutputFormat.PGON, "NAZEV", null));
-        String pgonText = Files.readString(directory.resolve("result-Bělá pod Bezdězem.pgon"));
+        String pgonText = Files.readString(directory.resolve("result-Bělá pod Bezdězem.pgon"), Charset.forName("windows-1250"));
         assertEquals("# GsakName=Bělá pod Bezdězem\n50.0 14.0\n51.0 15.0\n50.0 15.0\n50.0 14.0\n#\n", pgonText);
     }
 
@@ -316,6 +316,19 @@ class ConverterTest {
         Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--quiet"}));
 
         assertTrue(Files.isRegularFile(directory.resolve("obec-Bělá.pgon")));
+    }
+
+    @Test
+    void pgonOutputUsesWindows1250Encoding() throws Exception {
+        Path shapefile = createShapefile("Bělá");
+        Path output = directory.resolve("obec.pgon");
+
+        Main.convert(Main.Arguments.parse(new String[]{shapefile.toString(), output.toString(), "--quiet"}));
+
+        Path pgon = directory.resolve("obec-Bělá.pgon");
+        String text = Files.readString(pgon, Charset.forName("windows-1250"));
+        assertTrue(text.startsWith("# GsakName=Bělá\n"), text);
+        assertEquals((byte) 0xec, Files.readAllBytes(pgon)[12]);
     }
 
     @Test

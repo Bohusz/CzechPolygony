@@ -61,7 +61,7 @@ Coordinate order differs by format:
 
 ## Geometry and names
 
-Only `Polygon` and `MultiPolygon` input is supported. GeoJSON preserves every polygon component and interior ring. GPX writes one exterior-boundary track per polygon component. PGON writes a separate UTF-8 file per component.
+Only `Polygon` and `MultiPolygon` input is supported. GeoJSON preserves every polygon component and interior ring. GPX writes one exterior-boundary track per polygon component. PGON writes a separate Windows-1250 file per component.
 
 `--name-field NAZEV` selects the name attribute. Without it, the first non-empty string attribute is used; otherwise names such as `polygon-1` are generated. Every output item receives a separate name-based file: `obec.geojson` and the name `Bělá pod Bezdězem` produce `obec-Bělá pod Bezdězem.geojson`. Use `--file-name-field FIELD` to select a different attribute exclusively for filenames; without it, the feature name is used as before. The filename component is sanitized only as required by the operating system; the original name remains unchanged in output content. Duplicate generated filenames are rejected rather than overwritten.
 
@@ -75,6 +75,6 @@ When no placeholder is present, PGON filenames continue to use the name-based co
 
 ## Input encoding
 
-All generated output is UTF-8 except metadata CSV, which defaults to `windows-1250` and can be changed with `--csv-charset`. When a sibling `.cpg` file is present, its code-page declaration controls GeoTools DBF attribute decoding (for example, `1250` selects Windows-1250). Without a `.cpg` file, DBF input defaults to UTF-8. Invalid or unsupported `.cpg` declarations cause a conversion error.
+GeoJSON and GPX output is UTF-8. PGON output uses Windows-1250. Metadata CSV defaults to `windows-1250` and can be changed with `--csv-charset`. When a sibling `.cpg` file is present, its code-page declaration controls GeoTools DBF attribute decoding (for example, `1250` selects Windows-1250). Without a `.cpg` file, DBF input defaults to UTF-8. Invalid or unsupported `.cpg` declarations cause a conversion error.
 
 The input `.shp`, `.shx`, and `.dbf` files must all be present and readable.
