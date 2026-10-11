@@ -1,16 +1,22 @@
 package cz.xlii.xbr.polygons.mapgenerator.input;
 
 import cz.xlii.xbr.polygons.mapgenerator.model.PolygonData;
+import cz.xlii.xbr.polygons.mapgenerator.TextFileReader;
 import org.locationtech.jts.geom.Coordinate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class GsakPolygonParser {
     public PolygonData parse(Path path) throws IOException {
-        var lines = Files.readAllLines(path);
+        return parse(path, Charset.forName("windows-1250"));
+    }
+
+    public PolygonData parse(Path path, Charset charset) throws IOException {
+        var lines = TextFileReader.readLines(path, charset);
         if (lines.isEmpty() || !lines.getFirst().trim().startsWith("# GsakName=")) throw error(path, 1, "missing GsakName header");
         var name = lines.getFirst().trim().substring("# GsakName=".length()).trim();
         if (name.isEmpty()) throw error(path, 1, "empty GsakName");

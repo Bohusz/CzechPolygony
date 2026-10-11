@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -23,10 +24,12 @@ public final class Main implements Callable<Integer> {
  @CommandLine.Option(names="--fill", defaultValue="#ffffff") String fill;
  @CommandLine.Option(names="--border", defaultValue="#000000") String border;
  @CommandLine.Option(names="--background", defaultValue="transparent") String background;
+  @CommandLine.Option(names="--encoding", defaultValue="windows-1250", description="Default text encoding (BOM/format declarations take precedence)") String encoding;
  @Override public Integer call() {
   try {
    if (width < 1 || height < 1) throw new IllegalArgumentException("Canvas dimensions must be positive");
    var polygons = new GsakPolygonInputProvider().read(input, recursive);
+    var charset = Charset.forName(encoding);
    if (!output.toString().toLowerCase().matches(".*\\.(png|svg)$")) throw new IllegalArgumentException("Output must end in .png or .svg");
    var mode = projection.equalsIgnoreCase("auto") ? auto(polygons) : projection.toLowerCase();
    if (!(mode.equals("5514") || mode.equals("laea") || mode.equals("3857"))) throw new IllegalArgumentException("Unsupported projection: " + projection);
