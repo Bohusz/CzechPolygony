@@ -40,7 +40,10 @@ public final class GsakPolygonParser {
         if (points.size() < 4 || !points.getFirst().equals2D(points.getLast())) throw error(path, 1, "polygon must have at least three vertices and be explicitly closed");
         var base = path.getFileName().toString().replaceFirst("(?i)\\.pgon$", "");
         var polygonId = base.split("_", 2)[0];
-        var territoryId = polygonId.split("[- \\t]", 2)[0];
+        var comma = polygonId.indexOf(',');
+        var openingBracket = polygonId.indexOf('(');
+        var delimiter = comma < 0 ? openingBracket : openingBracket < 0 ? comma : Math.min(comma, openingBracket);
+        var territoryId = (delimiter < 0 ? polygonId : polygonId.substring(0, delimiter)).trim();
         return new PolygonData(path, polygonId, territoryId, name, points);
     }
     private IllegalArgumentException error(Path path, int line, String message) { return new IllegalArgumentException(path + ":" + line + ": " + message); }
