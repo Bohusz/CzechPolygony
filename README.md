@@ -5,6 +5,6 @@ This repository contains tools for working with Czech polygon data.
 ## Modules
 
 - `shp-converter` — command-line converter for ESRI Shapefile polygon data.
-- More modules will be added to the repository soon.
+- `map-generator` — renders GSAK polygons as PNG or SVG maps.
 
-See [`shp-converter/README.md`](shp-converter/README.md) for module-specific build and usage instructions.
+See the module README files for build and usage instructions.

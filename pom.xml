@@ -11,6 +11,7 @@
 
     <modules>
         <module>shp-converter</module>
+        <module>map-generator</module>
     </modules>
 
     <properties>
