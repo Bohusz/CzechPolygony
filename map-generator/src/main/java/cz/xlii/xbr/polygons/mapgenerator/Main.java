@@ -27,19 +27,30 @@ public final class Main implements Callable<Integer> {
   @CommandLine.Option(names="--background", defaultValue="transparent") String background;
   @CommandLine.Option(names="--territory-colors", description="File containing territory-id=color mappings") Path territoryColors;
   @CommandLine.Option(names="--encoding", defaultValue="windows-1250", description="Default text encoding (BOM/format declarations take precedence)") String encoding;
+  @CommandLine.Option(names="--verbose", description="Report parameters and processing duration") boolean verbose;
+  @CommandLine.Option(names="--debug", description="Report detailed file and polygon processing information") boolean debug;
   private Map<String, String> territoryColorMap = Map.of();
  @Override public Integer call() {
+  var started = System.nanoTime();
+  var detailed = verbose || debug;
   try {
+    if (detailed) reportParameters();
     if (width < 1 || height < 1) throw new IllegalArgumentException("Canvas dimensions must be positive");
     var charset = Charset.forName(encoding);
-    if (territoryColors != null) territoryColorMap = ColorMappingParser.parse(territoryColors, charset);
-   var polygons = new GsakPolygonInputProvider(charset).read(input, recursive);
+    var readListener = debug ? (java.util.function.BiConsumer<Path, Integer>) (path, lines) -> System.out.println("Read file: " + path + " (" + lines + " lines)") : null;
+    if (territoryColors != null) territoryColorMap = ColorMappingParser.parse(territoryColors, charset, readListener);
+   var polygons = new GsakPolygonInputProvider(charset).read(input, recursive, readListener);
+   if (debug) polygons.forEach(p -> { var mapped = territoryColorMap.get(p.territoryId()); System.out.println("Polygon: vertices=" + (p.coordinates().size() - 1) + ", id=" + p.polygonId() + ", territory=" + p.territoryId() + ", name=" + p.name() + (territoryColors == null ? "" : ", territory-color=" + (mapped == null ? "no match, assigned " + fill : "matched, assigned " + mapped))); });
    if (!output.toString().toLowerCase().matches(".*\\.(png|svg)$")) throw new IllegalArgumentException("Output must end in .png or .svg");
    var mode = projection.equalsIgnoreCase("auto") ? auto(polygons) : projection.toLowerCase();
    if (!(mode.equals("5514") || mode.equals("laea") || mode.equals("3857"))) throw new IllegalArgumentException("Unsupported projection: " + projection);
    render(polygons, mode);
    return 0;
   } catch (Exception e) { System.err.println(e.getMessage()); return 1; }
+  finally { if (detailed) System.out.println("Processing finished in " + ((System.nanoTime() - started) / 1_000_000) + " ms"); }
+ }
+ private void reportParameters() {
+  System.out.println("Parameters: input=" + input + ", output=" + output + ", recursive=" + recursive + ", width=" + width + ", height=" + height + ", projection=" + projection + ", fill=" + fill + ", border=" + border + ", background=" + background + ", territoryColors=" + territoryColors + ", encoding=" + encoding + ", verbose=" + verbose + ", debug=" + debug);
  }
  private String auto(List<PolygonData> ps) { return ps.stream().flatMap(p -> p.coordinates().stream()).allMatch(c -> c.y >= 47.73 && c.y <= 51.06 && c.x >= 12.09 && c.x <= 22.56) ? "5514" : "laea"; }
  private Point project(double lon, double lat, String mode, double minX, double maxX, double minY, double maxY) {

@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 final class ColorMappingParser {
     private ColorMappingParser() {
@@ -16,12 +17,16 @@ final class ColorMappingParser {
     }
 
     static Map<String, String> parse(Path path, Charset charset) throws IOException {
+        return parse(path, charset, null);
+    }
+
+    static Map<String, String> parse(Path path, Charset charset, BiConsumer<Path, Integer> readListener) throws IOException {
         if (!Files.isRegularFile(path)) {
             throw new IOException("Territory color mapping file does not exist: " + path);
         }
         var mappings = new LinkedHashMap<String, String>();
         var lineNumber = 0;
-        for (var line : TextFileReader.readLines(path, charset)) {
+        for (var line : TextFileReader.readLines(path, charset, readListener)) {
             lineNumber++;
             var value = line.trim();
             if (value.isEmpty() || value.startsWith("#")) {

@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 public final class GsakPolygonParser {
     public PolygonData parse(Path path) throws IOException {
@@ -16,7 +17,11 @@ public final class GsakPolygonParser {
     }
 
     public PolygonData parse(Path path, Charset charset) throws IOException {
-        var lines = TextFileReader.readLines(path, charset);
+        return parse(path, charset, null);
+    }
+
+    public PolygonData parse(Path path, Charset charset, BiConsumer<Path, Integer> readListener) throws IOException {
+        var lines = TextFileReader.readLines(path, charset, readListener);
         if (lines.isEmpty() || !lines.getFirst().trim().startsWith("# GsakName=")) throw error(path, 1, "missing GsakName header");
         var name = lines.getFirst().trim().substring("# GsakName=".length()).trim();
         if (name.isEmpty()) throw error(path, 1, "empty GsakName");

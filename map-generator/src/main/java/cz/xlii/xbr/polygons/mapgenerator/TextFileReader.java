@@ -8,12 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 public final class TextFileReader {
     private TextFileReader() {
     }
 
     public static List<String> readLines(Path path, Charset defaultCharset) throws IOException {
+        return readLines(path, defaultCharset, null);
+    }
+
+    public static List<String> readLines(Path path, Charset defaultCharset, BiConsumer<Path, Integer> readListener) throws IOException {
         var bytes = Files.readAllBytes(path);
         var offset = 0;
         var charset = defaultCharset;
@@ -28,7 +33,9 @@ public final class TextFileReader {
             offset = 2;
         }
         var content = offset == 0 ? bytes : Arrays.copyOfRange(bytes, offset, bytes.length);
-        return new String(content, charset).lines().toList();
+        var lines = new String(content, charset).lines().toList();
+        if (readListener != null) readListener.accept(path, lines.size());
+        return lines;
     }
 
     private static boolean startsWith(byte[] value, byte[] prefix) {
