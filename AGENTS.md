@@ -66,3 +66,10 @@
 The Junie co-author trailer is an environment requirement for commits made by
 the agent; it is documented here for visibility and is not a Maven or Java
 project requirement.
+
+## Dependency management
+
+- Use Maven dependency management for all dependencies.
+- Use bom files to manage versions of dependencies whenever possible.
+- When adding a dependency management for a vulnerable artifact transitively included by other - explicitly required - artifacts
+  mark it with a brief comment stating that it is a security workaround and which vulnerable version it replaces.
