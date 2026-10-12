@@ -162,15 +162,14 @@ public final class Main {
             while (features.hasNext()) {
                 SimpleFeature feature = features.next();
                 featureNumber++;
-                String name = names.resolve(feature, featureNumber);
+                String territoryName = names.resolve(feature, featureNumber);
                 String fileName = names.resolveFileName(feature, featureNumber);
                 List<Polygon> polygons = polygons(transformer.transform(polygonal(feature)));
                 for (int i = 0; i < polygons.size(); i++) {
-                    String componentName = polygons.size() == 1 ? name : name + " - " + (i + 1);
                     String fileComponentName = polygons.size() == 1 ? fileName : fileName + " - " + (i + 1);
                     Integer componentNumber = polygons.size() == 1 ? null : i + 1;
                     new PgonWriter(outputNames.resolvePgon(fileComponentName, feature, componentNumber))
-                            .write(componentName, polygons.get(i));
+                            .write(territoryName, polygons.get(i));
                 }
                 progress.processedFeature();
             }
