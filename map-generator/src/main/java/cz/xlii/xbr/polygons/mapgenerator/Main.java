@@ -14,9 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(name="map-generator", mixinStandardHelpOptions=true, description="Create a map from GSAK polygon files.")
+@CommandLine.Command(name="map-generator", mixinStandardHelpOptions=true, versionProvider=Main.VersionProvider.class, description="Create a map from GSAK polygon files.")
 public final class Main implements Callable<Integer> {
- @CommandLine.Parameters(index="0", description="Input folder") Path input;
+  public static final class VersionProvider implements CommandLine.IVersionProvider {
+   @Override public String[] getVersion() {
+    var version = Main.class.getPackage().getImplementationVersion();
+    return new String[]{"map-generator " + (version == null ? "development" : version)};
+   }
+  }
+  @CommandLine.Parameters(index="0", description="Input folder") Path input;
  @CommandLine.Parameters(index="1", description="Output .png or .svg") Path output;
  @CommandLine.Option(names="--recursive", defaultValue="true") boolean recursive;
  @CommandLine.Option(names="--width", defaultValue="1600") int width;
